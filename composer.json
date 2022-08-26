@@ -1,0 +1,10 @@
+{
+    "name": "quinninteractive/silverstripe-deployer",
+    "description": "Advanced deployer recipe for Silverstripe",
+    "type": "library",
+    "license": "BSD-3-Clause",
+    "require": {
+        "deployer/deployer": "^7.0",
+        "vlucas/phpdotenv": "^5.4"
+    }
+}
