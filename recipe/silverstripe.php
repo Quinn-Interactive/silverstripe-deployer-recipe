@@ -14,10 +14,15 @@ define('SILVERSTRIPE_BUILDFLUSH', 'silverstripe:buildflush');
 
 set('allow_anonymous_stats', false);
 set('shell', 'bash -s');
-
-add('shared_files', []);
-add('shared_dirs', []);
-add('writable_dirs', []);
+set('silverstripe_cli_script', 'vendor/silverstripe/framework/cli-script.php');
+set('shared_assets', function () {
+    if (test('[ -d {{release_or_current_path}}/public ]') || test('[ -d {{deploy_path}}/shared/public ]')) {
+        return 'public/assets';
+    }
+    return 'assets';
+});
+set('shared_dirs', ['{{shared_assets}}']);
+set('writable_dirs', ['{{shared_assets}}']);
 
 set('dotenv_dir', '{{deploy_path}}/releases');
 set('current_branch', exec('git branch --show-current'));
