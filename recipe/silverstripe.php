@@ -4,6 +4,9 @@ namespace Deployer;
 
 use Dotenv\Dotenv;
 
+require_once 'vendor/deployer/deployer/recipe/common.php';
+add('recipes', ['silverstripe']);
+
 // Config
 define('GIT_CHECK', 'git:check');
 define('CHECK_NOT_LIVE', 'checknotlive');
@@ -204,6 +207,14 @@ task('silverstripe:build', function () {
 task(SILVERSTRIPE_BUILDFLUSH, function () {
     return run('sudo -Eu {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build flush=all');
 })->desc('Run sudo -Eu {{http_user}} /dev/build?flush=all');
+
+desc('Deploys your project');
+task('deploy', [
+    'deploy:prepare',
+    'deploy:vendors',
+    'silverstripe:buildflush',
+    'deploy:publish',
+]);
 
 // sequence modifications
 before(GIT_CHECK, 'git:remote-update');
