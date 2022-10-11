@@ -215,20 +215,19 @@ task(SILVERSTRIPE_BUILDFLUSH, function () {
 
 desc('Deploys your project');
 task('deploy', [
+    'git:remote-update',
+    GIT_CHECK,
     'deploy:prepare',
     'deploy:vendors',
+    'composer:vendor-expose',
+    'silverstripe:robots',
+    'silverstripe:theme',
     'silverstripe:buildflush',
     'deploy:publish',
 ]);
 
 // sequence modifications
-before(GIT_CHECK, 'git:remote-update');
-before('deploy', GIT_CHECK);
 before('upload', CHECK_NOT_LIVE);
-before(SILVERSTRIPE_BUILDFLUSH, 'silverstripe:robots');
-before(SILVERSTRIPE_BUILDFLUSH, 'silverstripe:theme');
-
-after('deploy:vendors', 'composer:vendor-expose');
 after('deploy:symlink', 'nginx:reload');
 after('deploy:failed', 'deploy:unlock');
 after('rollback', SILVERSTRIPE_BUILDFLUSH);
