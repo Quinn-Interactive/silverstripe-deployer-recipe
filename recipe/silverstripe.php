@@ -10,6 +10,7 @@ add('recipes', ['silverstripe']);
 // Config
 define('GIT_CHECK', 'git:check');
 define('CHECK_NOT_LIVE', 'checknotlive');
+define('CHECK_ZFS', 'checkzfs');
 define('SILVERSTRIPE_BUILDFLUSH', 'silverstripe:buildflush');
 
 set('allow_anonymous_stats', false);
@@ -42,6 +43,11 @@ task('info', function () {
 })->hidden();
 
 // upload/download (move data & assets up or down, overwriting the target)
+task(CHECK_ZFS, function () {
+    if (get('zfs') === null) {
+        throw error('Must set zfs to true or false to upload');
+    }
+});
 task(CHECK_NOT_LIVE, function () {
     global $dev_hosts;
     if (get('environment_name') == 'live' && empty($_SERVER['UNSAFE_UPLOAD'])) {
@@ -92,11 +98,19 @@ task('upload', function () {
     runLocally(sprintf('rsync %s -zavP %s@%s:%s', $local_tar_file, get('remote_user'), $remote_hostname, $remote_tar_file));
 
     // Replace the remote assets
-    /// destroy and re-create the zfs dataset
-    $zfs_dataset = sprintf('zroot/var/silverstripe/%s/shared/public/assets', get('environment_name'));
+    $zfs = get('zfs');
     $assets_dir = sprintf('/var/silverstripe/%s/shared/public/assets', get('environment_name'));
-    run(sprintf('sudo zfs destroy %s', $zfs_dataset));
-    run(sprintf('sudo zfs create %s', $zfs_dataset));
+
+    if ($zfs) {
+        /// destroy and re-create the zfs dataset
+        $zfs_dataset = sprintf('zroot/var/silverstripe/%s/shared/public/assets', get('environment_name'));
+        run(sprintf('sudo zfs destroy %s', $zfs_dataset));
+        run(sprintf('sudo zfs create %s', $zfs_dataset));
+    } else {
+        /// delete & re-create the UFS directory for assets
+        run(sprintf('sudo rm -rf %s', $assets_dir));
+        run(sprintf('sudo mkdir -p %s', $assets_dir));
+    }
     run(sprintf('sudo chown -R %s:%s %s', get('remote_user'), get('http_user'), $assets_dir));
     run(sprintf('sudo chmod -R g+w %s', $assets_dir));
 
@@ -228,6 +242,7 @@ task('deploy', [
 
 // sequence modifications
 before('upload', CHECK_NOT_LIVE);
+before('upload', CHECK_ZFS);
 after('deploy:symlink', 'nginx:reload');
 after('deploy:failed', 'deploy:unlock');
 after('rollback', SILVERSTRIPE_BUILDFLUSH);
