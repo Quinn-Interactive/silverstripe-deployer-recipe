@@ -1,6 +1,6 @@
 {
     "name": "quinninteractive/silverstripe-deployer",
-    "description": "Advanced deployer recipe for Silverstripe",
+    "description": "Quinn Interactive's deployer recipe for Silverstripe",
     "type": "library",
     "license": "BSD-3-Clause",
     "require": {
