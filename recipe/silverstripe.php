@@ -23,6 +23,7 @@ set('writable_dirs', ['{{shared_assets}}']);
 set('dotenv_dir', '{{deploy_path}}/releases');
 set('current_branch', exec('git branch --show-current'));
 set('theme_name', 'main');
+set('themeless', false);
 
 // Tasks
 task('info', function () {
@@ -197,6 +198,9 @@ task('silverstripe:robots', function () {
 
 // THEME
 task('silverstripe:theme', function () {
+    if (get('themeless')) {
+        return;
+    }
     if (preg_match('/^(live|demo)/', get('environment_name'))) {
         run('cd {{release_path}}/themes/{{theme_name}} && yarn && yarn production');
     } else {
