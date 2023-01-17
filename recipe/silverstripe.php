@@ -8,11 +8,6 @@ require_once 'vendor/deployer/deployer/recipe/common.php';
 add('recipes', ['silverstripe']);
 
 // Config
-define('GIT_CHECK', 'git:check');
-define('CHECK_NOT_LIVE', 'checknotlive');
-define('CHECK_ZFS', 'checkzfs');
-define('SILVERSTRIPE_BUILDFLUSH', 'silverstripe:buildflush');
-
 set('allow_anonymous_stats', false);
 set('shell', 'bash -s');
 set('silverstripe_cli_script', 'vendor/silverstripe/framework/cli-script.php');
@@ -44,12 +39,12 @@ task('info', function () {
 })->hidden();
 
 // upload/download (move data & assets up or down, overwriting the target)
-task(CHECK_ZFS, function () {
+task('checkzfs', function () {
     if (get('zfs') === null) {
         throw error('Must set zfs to true or false to upload');
     }
 });
-task(CHECK_NOT_LIVE, function () {
+task('checknotlive', function () {
     global $dev_hosts;
     if (get('environment_name') == 'live' && empty($_SERVER['UNSAFE_UPLOAD'])) {
         throw error('Upload does not work in production (set UNSAFE_UPLOAD in shell environment to override).');
@@ -182,7 +177,7 @@ task('git:remote-update', function () {
     runLocally('git remote update');
 });
 
-task(GIT_CHECK, function () {
+task('git:check', function () {
     $branch = exec('git symbolic-ref --short -q HEAD');
     $result_code = -1;
     system(sprintf('git diff --quiet %s origin/%s', $branch, $branch), $result_code);
@@ -224,14 +219,14 @@ task('silverstripe:build', function () {
     return run('sudo -Eu {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build');
 })->desc('Run sudo -Eu {{http_user}} /dev/build');
 
-task(SILVERSTRIPE_BUILDFLUSH, function () {
+task('silverstripe:buildflush', function () {
     return run('sudo -Eu {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build flush=all');
 })->desc('Run sudo -Eu {{http_user}} /dev/build?flush=all');
 
 desc('Deploys your project');
 task('deploy', [
     'git:remote-update',
-    GIT_CHECK,
+    'git:check',
     'deploy:prepare',
     'deploy:vendors',
     'composer:vendor-expose',
@@ -242,8 +237,8 @@ task('deploy', [
 ]);
 
 // sequence modifications
-before('upload', CHECK_NOT_LIVE);
-before('upload', CHECK_ZFS);
+before('upload', 'checknotlive');
+before('upload', 'checkzfs');
 after('deploy:symlink', 'nginx:reload');
 after('deploy:failed', 'deploy:unlock');
-after('rollback', SILVERSTRIPE_BUILDFLUSH);
+after('rollback', 'silverstripe:buildflush');
