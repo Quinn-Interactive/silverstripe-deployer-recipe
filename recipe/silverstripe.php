@@ -215,7 +215,7 @@ task('composer:vendor-expose', function () {
 
 // NGINX
 task('nginx:reload', function () {
-    run('sudo service nginx reload');
+    run(sprintf('[ -x %s ] && sudo service nginx reload || exit 0', get('nginx_path', '/usr/local/sbin/nginx')));
 })->desc('Reload the nginx service');
 
 // dev/build OVERRIDES to add 'sudo -Eu www'
