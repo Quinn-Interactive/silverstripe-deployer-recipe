@@ -45,14 +45,17 @@ task('checkzfs', function () {
         throw error('Must set zfs to true or false to upload');
     }
 });
-task('checknotlive', function () {
-    global $dev_hosts;
-    if (get('environment_name') == 'live' && empty($_SERVER['UNSAFE_UPLOAD'])) {
-        throw error('Upload does not work in production (set UNSAFE_UPLOAD in shell environment to override).');
+task('preventlive', function () {
+    if (get('environment_name') == 'live') {
+        throw error('The requested operation is not allowed on live.');
     }
 });
 task('upload', function () {
     global $dotenv_local;
+
+    if (get('environment_name') == 'live' && empty($_SERVER['UNSAFE_UPLOAD'])) {
+        throw error('Upload does not work in production (set UNSAFE_UPLOAD in shell environment to override).');
+    }
 
     // get the remote environment
     $remote_hostname = get('hostname');
@@ -241,7 +244,6 @@ task('deploy', [
 ]);
 
 // sequence modifications
-before('upload', 'checknotlive');
 before('upload', 'checkzfs');
 after('deploy:symlink', 'nginx:reload');
 after('deploy:failed', 'deploy:unlock');
