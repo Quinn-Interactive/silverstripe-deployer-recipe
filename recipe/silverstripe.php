@@ -236,9 +236,9 @@ task('deploy', [
     'git:check',
     'deploy:prepare',
     'deploy:vendors',
+    'silverstripe:theme',
     'composer:vendor-expose',
     'silverstripe:robots',
-    'silverstripe:theme',
     'silverstripe:buildflush',
     'deploy:publish',
 ]);
