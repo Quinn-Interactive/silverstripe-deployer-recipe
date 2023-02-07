@@ -148,7 +148,7 @@ task('download', function () {
     runLocally(sprintf('rsync -zavP %s@%s:%s %s', get('remote_user'), $remote_hostname, $sql_file_remote, $sql_file_local));
 
     // Locally load the DB
-    runLocally(sprintf('< %s mysql -v %s', $sql_file_local, $dotenv_local['SS_DATABASE_NAME']));
+    runLocally(sprintf('< %s mysql %s', $sql_file_local, $dotenv_local['SS_DATABASE_NAME']));
 
     // Clean up temporary DB files
     unlink($sql_file_local);
