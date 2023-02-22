@@ -25,6 +25,15 @@ set('current_branch', exec('git branch --show-current'));
 set('theme_name', 'main');
 set('themeless', false);
 
+// support for graphql disk artifacts
+set('cleanup_use_sudo', true);
+set('writable_use_sudo', true);
+set('writable_mode', 'chown');
+set('writable_dirs', [
+    '.graphql-generated',
+    'public/_graphql',
+]);
+
 // Tasks
 task('info', function () {
     $info = [
