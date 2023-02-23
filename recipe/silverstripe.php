@@ -121,12 +121,12 @@ task('upload', function () {
         run(sprintf('sudo mkdir -p %s', $assets_dir));
     }
     run(sprintf('sudo chown -R %s:%s %s', get('remote_user'), get('http_user'), $assets_dir));
-
-    /// Extract the tar file
-    cd($shared_public_dir);
-    run(sprintf('sudo tar -xf %s', $remote_tar_file));
-    run(sprintf('sudo chown -R %s:%s %s', get('http_user'), get('http_user'), $assets_dir));
     run(sprintf('sudo chmod -R g+w %s', $assets_dir));
+
+    /// Extract the tar file (DO NOT use sudo here!)
+    cd($shared_public_dir);
+    run(sprintf('tar -xf %s', $remote_tar_file));
+    run(sprintf('sudo chown -R %s:%s %s', get('http_user'), get('http_user'), $assets_dir));
 
     // clean up temporary tar files
     runLocally("rm ${local_tar_file}");
