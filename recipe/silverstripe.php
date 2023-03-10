@@ -4,6 +4,8 @@ namespace Deployer;
 
 use Dotenv\Dotenv;
 
+use Symfony\Component\Console\Helper\Table;
+
 require_once 'vendor/deployer/deployer/recipe/common.php';
 add('recipes', ['silverstripe']);
 
@@ -251,6 +253,54 @@ task('deploy', [
     'silverstripe:buildflush',
     'deploy:publish',
 ]);
+
+task('qi:releases', function () {
+    cd('{{deploy_path}}');
+
+    $releasesLog = get('releases_log');
+    $currentRelease = basename(run('readlink {{current_path}}'));
+    $releasesList = get('releases_list');
+
+    $table = [];
+    $tz = !empty(getenv('TIMEZONE')) ? getenv('TIMEZONE') : date_default_timezone_get();
+
+    foreach ($releasesLog as &$metainfo) {
+        $date = \DateTime::createFromFormat(\DateTime::ATOM, $metainfo['created_at']);
+        $date->setTimezone(new \DateTimeZone($tz));
+        $status = $release = $metainfo['release_name'];
+        if (in_array($release, $releasesList, true)) {
+            if (test("[ -f releases/$release/BAD_RELEASE ]")) {
+                $status = "<error>$release</error> (bad)";
+            } elseif (test("[ -f releases/$release/DIRTY_RELEASE ]")) {
+                $status = "<error>$release</error> (dirty)";
+            } else {
+                $status = "<info>$release</info>";
+            }
+        }
+        if ($release === $currentRelease) {
+            $status .= ' (current)';
+        }
+        try {
+            $rev = escapeshellarg(run("cat releases/$release/REVISION"));
+            $revision = runLocally("git describe $rev");
+        } catch (\Throwable $e) {
+            $revision = 'unknown';
+        }
+        $table[] = [
+            $date->format("Y-m-d H:i:s"),
+            $status,
+            $metainfo['user'],
+            $metainfo['target'],
+            $revision,
+        ];
+    }
+
+    (new Table(output()))
+        ->setHeaderTitle(currentHost()->getAlias())
+        ->setHeaders(["Date ($tz)", 'Release', 'Author', 'Target', 'Version'])
+        ->setRows($table)
+        ->render();
+})->desc('Show release table with git descriptions');
 
 // sequence modifications
 before('upload', 'checkzfs');
