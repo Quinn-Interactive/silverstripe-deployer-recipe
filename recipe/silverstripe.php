@@ -1,9 +1,12 @@
 <?php
+/**
+ * Quinn Interactive Silverstripe deployer recipe
+ * Version: 1.0.0-rc1
+ */
 
 namespace Deployer;
 
 use Dotenv\Dotenv;
-
 use Symfony\Component\Console\Helper\Table;
 
 require_once 'vendor/deployer/deployer/recipe/common.php';
