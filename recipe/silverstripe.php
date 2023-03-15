@@ -182,12 +182,14 @@ task('download', function () {
     runLocally(sprintf('rsync -zavP %s@%s:%s %s', get('remote_user'), $remote_hostname, $remote_tar_file, $local_tar_file));
 
     // Replace the local assets
-    runLocally('rm -rf public/assets');
+    runLocally('command -v trash && trash public/assets || exit 0');
+    runLocally('command -v trash || mv public/assets public/Xassets');
     runLocally(sprintf('cd public && tar -xf %s', $local_tar_file));
 
-    // clean up temporary tar files
+    // clean up temporary files
     runLocally("rm ${local_tar_file}");
     run("rm ${remote_tar_file}");
+    runLocally('[ -d public/Xassets ] && rm -rf public/Xassets || exit 0');
 })->desc('Overwrite local DB and assets with remote files');
 
 // git
