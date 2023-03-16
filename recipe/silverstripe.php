@@ -1,7 +1,7 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 1.0.0-rc2
+ * Version: 1.0.0-rc3
  */
 
 namespace Deployer;
@@ -92,7 +92,7 @@ task('upload', function () {
     runLocally(sprintf('rsync -zavP %s %s@%s:%s', $sql_file_local, get('remote_user'), $remote_hostname, $sql_file_remote));
 
     // Remotely load the DB
-    run(sprintf('< %s mysql -v %s', $sql_file_remote, $dotenv_remote['SS_DATABASE_NAME']));
+    run(sprintf('< %s mysql %s', $sql_file_remote, $dotenv_remote['SS_DATABASE_NAME']));
 
     // Clean up temporary DB files
     unlink($sql_file_local);
