@@ -1,13 +1,14 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 1.0.1
+ * Version: 1.1.0
  */
 
 namespace Deployer;
 
 use Dotenv\Dotenv;
 use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Input\InputOption;
 
 require_once 'vendor/deployer/deployer/recipe/common.php';
 add('recipes', ['silverstripe']);
@@ -273,9 +274,11 @@ task('deploy', [
     'deploy:publish',
 ]);
 
+option('all', 'a', InputOption::VALUE_NONE, 'List all releases, even the deleted ones.', null);
 task('qi:releases', function () {
     cd('{{deploy_path}}');
 
+    $showing_all = input()->getOption('all');
     $releasesLog = get('releases_log');
     $currentRelease = basename(run('readlink {{current_path}}'));
     $releasesList = get('releases_list');
@@ -283,11 +286,15 @@ task('qi:releases', function () {
     $table = [];
     $tz = !empty(getenv('TIMEZONE')) ? getenv('TIMEZONE') : date_default_timezone_get();
 
-    foreach ($releasesLog as &$metainfo) {
+    foreach ($releasesLog as $metainfo) {
         $date = \DateTime::createFromFormat(\DateTime::ATOM, $metainfo['created_at']);
         $date->setTimezone(new \DateTimeZone($tz));
         $status = $release = $metainfo['release_name'];
-        if (in_array($release, $releasesList, true)) {
+        $release_exists = in_array($release, $releasesList);
+        if (!$release_exists && !$showing_all) {
+            continue;
+        }
+        if ($release_exists) {
             if (test("[ -f releases/$release/BAD_RELEASE ]")) {
                 $status = "<error>$release</error> (bad)";
             } elseif (test("[ -f releases/$release/DIRTY_RELEASE ]")) {
