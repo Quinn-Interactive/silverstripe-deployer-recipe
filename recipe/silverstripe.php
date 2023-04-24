@@ -307,8 +307,12 @@ task('qi:releases', function () {
             $status .= ' (current)';
         }
         try {
-            $rev = escapeshellarg(run("cat releases/$release/REVISION"));
-            $revision = runLocally("git describe $rev");
+            if ($release_exists) {
+                $rev = escapeshellarg(run("cat releases/$release/REVISION"));
+                $revision = runLocally("git describe $rev");
+            } else {
+                $revision = 'n/a';
+            }
         } catch (\Throwable $e) {
             $revision = 'unknown';
         }
