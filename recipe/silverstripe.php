@@ -295,12 +295,12 @@ task('qi:releases', function () {
             continue;
         }
         if ($release_exists) {
-            if (test("[ -f releases/$release/BAD_RELEASE ]")) {
-                $status = "<error>$release</error> (bad)";
-            } elseif (test("[ -f releases/$release/DIRTY_RELEASE ]")) {
-                $status = "<error>$release</error> (dirty)";
+            if (test("[ -f releases/{$release}/BAD_RELEASE ]")) {
+                $status = "<error>{$release}</error> (bad)";
+            } elseif (test("[ -f releases/{$release}/DIRTY_RELEASE ]")) {
+                $status = "<error>{$release}</error> (dirty)";
             } else {
-                $status = "<info>$release</info>";
+                $status = "<info>{$release}</info>";
             }
         }
         if ($release === $currentRelease) {
@@ -308,8 +308,8 @@ task('qi:releases', function () {
         }
         try {
             if ($release_exists) {
-                $rev = escapeshellarg(run("cat releases/$release/REVISION"));
-                $revision = runLocally("git describe $rev");
+                $rev = escapeshellarg(run("cat releases/{$release}/REVISION"));
+                $revision = runLocally("git describe {$rev}");
             } else {
                 $revision = 'n/a';
             }
@@ -327,7 +327,7 @@ task('qi:releases', function () {
 
     (new Table(output()))
         ->setHeaderTitle(currentHost()->getAlias())
-        ->setHeaders(["Date ($tz)", 'Release', 'Author', 'Target', 'Version'])
+        ->setHeaders(["Date ({$tz})", 'Release', 'Author', 'Target', 'Version'])
         ->setRows($table)
         ->render();
 })->desc('Show release table with git descriptions');
