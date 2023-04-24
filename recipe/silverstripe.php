@@ -1,7 +1,7 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 1.1.0
+ * Version: 1.1.1
  */
 
 namespace Deployer;
@@ -295,20 +295,24 @@ task('qi:releases', function () {
             continue;
         }
         if ($release_exists) {
-            if (test("[ -f releases/$release/BAD_RELEASE ]")) {
-                $status = "<error>$release</error> (bad)";
-            } elseif (test("[ -f releases/$release/DIRTY_RELEASE ]")) {
-                $status = "<error>$release</error> (dirty)";
+            if (test("[ -f releases/{$release}/BAD_RELEASE ]")) {
+                $status = "<error>{$release}</error> (bad)";
+            } elseif (test("[ -f releases/{$release}/DIRTY_RELEASE ]")) {
+                $status = "<error>{$release}</error> (dirty)";
             } else {
-                $status = "<info>$release</info>";
+                $status = "<info>{$release}</info>";
             }
         }
         if ($release === $currentRelease) {
             $status .= ' (current)';
         }
         try {
-            $rev = escapeshellarg(run("cat releases/$release/REVISION"));
-            $revision = runLocally("git describe $rev");
+            if ($release_exists) {
+                $rev = escapeshellarg(run("cat releases/{$release}/REVISION"));
+                $revision = runLocally("git describe {$rev}");
+            } else {
+                $revision = 'n/a';
+            }
         } catch (\Throwable $e) {
             $revision = 'unknown';
         }
@@ -323,7 +327,7 @@ task('qi:releases', function () {
 
     (new Table(output()))
         ->setHeaderTitle(currentHost()->getAlias())
-        ->setHeaders(["Date ($tz)", 'Release', 'Author', 'Target', 'Version'])
+        ->setHeaders(["Date ({$tz})", 'Release', 'Author', 'Target', 'Version'])
         ->setRows($table)
         ->render();
 })->desc('Show release table with git descriptions');
