@@ -1,7 +1,7 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 1.1.1
+ * Version: 1.1.2
  */
 
 namespace Deployer;
@@ -141,9 +141,9 @@ task('upload', function () {
     // clean up temporary files
     info('Cleaning up temporary files');
     unlink($sql_file_local);
-    run("rm ${sql_file_remote}");
-    runLocally("rm ${local_tar_file}");
-    run("rm ${remote_tar_file}");
+    run("rm {$sql_file_remote}");
+    runLocally("rm {$local_tar_file}");
+    run("rm {$remote_tar_file}");
     info('Upload done!');
 })->desc('Overwrite remote DB and assets with local files');
 
@@ -200,9 +200,9 @@ task('download', function () {
     // clean up temporary files
     info('Cleaning up temporary files');
     unlink($sql_file_local);
-    run("rm ${sql_file_remote}");
-    runLocally("rm ${local_tar_file}");
-    run("rm ${remote_tar_file}");
+    run("rm {$sql_file_remote}");
+    runLocally("rm {$local_tar_file}");
+    run("rm {$remote_tar_file}");
     runLocally('[ -d public/Xassets ] && rm -rf public/Xassets || exit 0');
     info('Download done');
 })->desc('Overwrite local DB and assets with remote files');
@@ -217,7 +217,7 @@ task('git:check', function () {
     $result_code = -1;
     system(sprintf('git diff --quiet %s origin/%s', $branch, $branch), $result_code);
     if ($result_code !== 0) {
-        throw error("Refusing to deploy: local and remote ${branch} branches are different.");
+        throw error("Refusing to deploy: local and remote {$branch} branches are different.");
     }
 });
 
