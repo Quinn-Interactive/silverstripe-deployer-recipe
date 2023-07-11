@@ -72,11 +72,10 @@ task('upload', function () {
         throw error('Upload does not work in production (set UNSAFE_UPLOAD in shell environment to override).');
     }
 
-    // get the remote environment
+    // get the remote environment; easy on live; must parse .env on non-production
     $remote_hostname = get('hostname');
     if ('live' == get('environment_name')) {
-        $vars_text = run('env | grep SS_');
-        $dotenv_remote = Dotenv::parse($vars_text);
+        $dotenv_remote = remoteEnv();
     } else {
         $dotenv_dir = get('dotenv_dir');
         $dotenv_tmp = tempnam(sys_get_temp_dir(), 'dotenv');
@@ -150,11 +149,10 @@ task('upload', function () {
 task('download', function () {
     global $dotenv_local;
 
-    // get the remote environment
+    // get the remote environment; easy on live; must parse .env on non-production
     $remote_hostname = get('hostname');
     if ('live' == get('environment_name')) {
-        $vars_text = run('env | grep SS_');
-        $dotenv_remote = Dotenv::parse($vars_text);
+        $dotenv_remote = remoteEnv();
     } else {
         $dotenv_dir = get('dotenv_dir');
         $dotenv_tmp = tempnam(sys_get_temp_dir(), 'dotenv');
