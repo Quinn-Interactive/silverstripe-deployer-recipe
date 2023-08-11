@@ -1,7 +1,7 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 1.1.3
+ * Version: 1.1.4
  */
 
 namespace Deployer;
