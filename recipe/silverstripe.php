@@ -1,7 +1,7 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 1.1.5
+ * Version: 2.0.0
  */
 
 namespace Deployer;
@@ -272,9 +272,9 @@ task('silverstripe:build', function () {
     return run('sudo -Eu {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build');
 })->desc('Run sudo -Eu {{http_user}} /dev/build');
 
-task('silverstripe:buildflush', function () {
-    return run('sudo -Eu {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build flush=all');
-})->desc('Run sudo -Eu {{http_user}} /dev/build?flush=all');
+task('silverstripe:devbuild', function () {
+    return run('sudo -Eu {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build');
+})->desc('Run sudo -Eu {{http_user}} /dev/build');
 
 desc('Deploys your project');
 task('deploy', [
@@ -285,7 +285,7 @@ task('deploy', [
     'silverstripe:theme',
     'composer:vendor-expose',
     'silverstripe:robots',
-    'silverstripe:buildflush',
+    'silverstripe:devbuild',
     'deploy:publish',
 ]);
 
@@ -351,4 +351,4 @@ task('qi:releases', function () {
 before('upload', 'checkzfs');
 after('deploy:symlink', 'nginx:reload');
 after('deploy:failed', 'deploy:unlock');
-after('rollback', 'silverstripe:buildflush');
+after('rollback', 'silverstripe:devbuild');
