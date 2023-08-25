@@ -1,7 +1,7 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 2.0.0
+ * Version: 2.0.1
  */
 
 namespace Deployer;
@@ -107,6 +107,7 @@ task('upload', function () {
     // tar up the local assets
     info('Building local assets archive');
     $local_tar_file = tempnam(sys_get_temp_dir(), 'assetstar');
+    runLocally('[ -d public/assets ] || mkdir public/assets');
     runLocally(sprintf("cd public && tar -cf %s %s", $local_tar_file, 'assets'));
 
     // Upload the assets tar file
@@ -183,6 +184,7 @@ task('download', function () {
     // tar up the local assets
     info('Building local assets archive');
     $local_tar_file = tempnam(sys_get_temp_dir(), 'assetstar');
+    runLocally('[ -d public/assets ] || mkdir public/assets');
     runLocally(sprintf("cd public && tar -cf %s %s", $local_tar_file, 'assets'));
 
     // Download the remote assets tar file
