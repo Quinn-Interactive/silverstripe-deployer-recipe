@@ -1,7 +1,7 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 2.0.1
+ * Version: 2.0.2
  */
 
 namespace Deployer;
@@ -269,11 +269,7 @@ task('nginx:reload', function () {
     run(sprintf('[ -x %s ] && sudo service nginx reload || exit 0', get('nginx_path', '/usr/local/sbin/nginx')));
 })->desc('Reload the nginx service')->oncePerNode();
 
-// dev/build OVERRIDES to add 'sudo -Eu www'
-task('silverstripe:build', function () {
-    return run('sudo -Eu {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build');
-})->desc('Run sudo -Eu {{http_user}} /dev/build');
-
+// substitute for silverstripe:build and silverstripe:buildflush (because dev/build always flushes anyway)
 task('silverstripe:devbuild', function () {
     return run('sudo -Eu {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build');
 })->desc('Run sudo -Eu {{http_user}} /dev/build');
