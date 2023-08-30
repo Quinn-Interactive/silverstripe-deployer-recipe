@@ -111,7 +111,7 @@ task('upload', function () {
     $shared_public_dir = sprintf('%s/%s', get('deploy_path'), 'shared/public');
     $remote_tar_file = run('mktemp');
     cd($shared_public_dir);
-    run(sprintf('sudo tar -cf %s %s', $remote_tar_file, 'assets'));
+    run(sprintf('doas tar -cf %s %s', $remote_tar_file, 'assets'));
 
     // tar up the local assets
     info('Building local assets archive');
@@ -131,21 +131,21 @@ task('upload', function () {
     if ($zfs) {
         /// destroy and re-create the zfs dataset
         $zfs_dataset = sprintf('zroot/var/silverstripe/%s/shared/public/assets', get('environment_name'));
-        run(sprintf('sudo zfs destroy %s', $zfs_dataset));
-        run(sprintf('sudo zfs create %s', $zfs_dataset));
+        run(sprintf('doas zfs destroy %s', $zfs_dataset));
+        run(sprintf('doas zfs create %s', $zfs_dataset));
     } else {
         /// delete & re-create the UFS directory for assets
-        run(sprintf('sudo rm -rf %s', $assets_dir));
-        run(sprintf('sudo mkdir -p %s', $assets_dir));
+        run(sprintf('doas rm -rf %s', $assets_dir));
+        run(sprintf('doas mkdir -p %s', $assets_dir));
     }
-    run(sprintf('sudo chown -R %s:%s %s', get('remote_user'), get('http_user'), $assets_dir));
-    run(sprintf('sudo chmod -R g+w %s', $assets_dir));
+    run(sprintf('doas chown -R %s:%s %s', get('remote_user'), get('http_user'), $assets_dir));
+    run(sprintf('doas chmod -R g+w %s', $assets_dir));
 
-    /// Extract the tar file (DO NOT use sudo here!)
+    /// Extract the tar file (DO NOT use doas here!)
     info('Extracting assets from archive on remote');
     cd($shared_public_dir);
     run(sprintf('tar -xf %s', $remote_tar_file));
-    run(sprintf('sudo chown -R %s:%s %s', get('http_user'), get('http_user'), $assets_dir));
+    run(sprintf('doas chown -R %s:%s %s', get('http_user'), get('http_user'), $assets_dir));
 
     // clean up temporary tar files
     info('Cleaning up temporary tar files');
@@ -195,7 +195,7 @@ task('download', function () {
     $shared_public_dir = sprintf('%s/%s', get('deploy_path'), 'shared/public');
     $remote_tar_file = run('mktemp');
     cd($shared_public_dir);
-    run(sprintf('sudo tar -cf %s %s', $remote_tar_file, 'assets'));
+    run(sprintf('doas tar -cf %s %s', $remote_tar_file, 'assets'));
 
     // tar up the local assets
     info('Building local assets archive');
@@ -272,13 +272,13 @@ task('composer:vendor-expose', function () {
 
 // NGINX
 task('nginx:reload', function () {
-    run(sprintf('[ -x %s ] && sudo service nginx reload || exit 0', get('nginx_path', '/usr/local/sbin/nginx')));
+    run(sprintf('[ -x %s ] && doas service nginx reload || exit 0', get('nginx_path', '/usr/local/sbin/nginx')));
 })->desc('Reload the nginx service')->oncePerNode();
 
 // substitute for silverstripe:build and silverstripe:buildflush (because dev/build always flushes anyway)
 task('silverstripe:devbuild', function () {
-    return run('sudo -Eu {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build');
-})->desc('Run sudo -Eu {{http_user}} /dev/build');
+    return run('doas -u {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build');
+})->desc('Run doas -u {{http_user}} /dev/build');
 
 desc('Deploys your project');
 task('deploy', [
