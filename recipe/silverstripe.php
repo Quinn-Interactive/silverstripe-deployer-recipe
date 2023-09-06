@@ -224,10 +224,11 @@ task('git:check', function () {
 // ROBOTS.TXT
 task('silverstripe:robots', function () {
     if (preg_match('/^(dev|demo)/', get('environment_name'))) {
-        foreach (['{{release_path}}/robots/dev/robots.txt',
+        foreach ([
             '{{release_path}}/robots/{{environment_name}}/robots.txt',
             '{{release_path}}/robots/dev/robots.txt',
-            '{{release_path}}/robots/robots.txt'] as $robots_path) {
+            '{{release_path}}/robots/robots.txt'
+            ] as $robots_path) {
             if (test("[ -f $robots_path ]")) {
                 run("cp {$robots_path} {{release_path}}/public");
                 break;
@@ -235,15 +236,6 @@ task('silverstripe:robots', function () {
         }
     } else {
         run('cp {{release_path}}/robots/live/robots.txt {{release_path}}/public');
-        foreach (['{{release_path}}/robots/dev/robots.txt',
-            '{{release_path}}/robots/{{environment_name}}/robots.txt',
-            '{{release_path}}/robots/live/robots.txt',
-            '{{release_path}}/robots/robots.txt'] as $robots_path) {
-            if (test("[ -f $robots_path ]")) {
-                run("cp {$robots_path} {{release_path}}/public");
-                break;
-            }
-        }
     }
 })->desc('Copy robots.txt into public');
 
