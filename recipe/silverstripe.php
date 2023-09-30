@@ -97,6 +97,11 @@ task('upload', function () {
     info('Loading DB remotely');
     run(sprintf('< %s mysql %s', $sql_file_remote, $dotenv_remote['SS_DATABASE_NAME']));
 
+    // clean up temporary SQL files
+    info('Cleaning up temporary SQL files');
+    unlink($sql_file_local);
+    run("rm {$sql_file_remote}");
+
     // Tar up the assets remotely
     info('Building remote assets archive');
     $shared_public_dir = sprintf('%s/%s', get('deploy_path'), 'shared/public');
@@ -138,10 +143,8 @@ task('upload', function () {
     run(sprintf('tar -xf %s', $remote_tar_file));
     run(sprintf('sudo chown -R %s:%s %s', get('http_user'), get('http_user'), $assets_dir));
 
-    // clean up temporary files
-    info('Cleaning up temporary files');
-    unlink($sql_file_local);
-    run("rm {$sql_file_remote}");
+    // clean up temporary tar files
+    info('Cleaning up temporary tar files');
     runLocally("rm {$local_tar_file}");
     run("rm {$remote_tar_file}");
     info('Upload done!');
@@ -174,6 +177,11 @@ task('download', function () {
     info('Loading DB locally');
     runLocally(sprintf('< %s mysql %s', $sql_file_local, $dotenv_local['SS_DATABASE_NAME']));
 
+    // clean up temporary SQL files
+    info('Cleaning up temporary SQL files');
+    unlink($sql_file_local);
+    run("rm {$sql_file_remote}");
+
     // Tar up the assets remotely
     info('Building remote assets archive');
     $shared_public_dir = sprintf('%s/%s', get('deploy_path'), 'shared/public');
@@ -197,10 +205,8 @@ task('download', function () {
     runLocally('command -v trash || mv public/assets public/Xassets');
     runLocally(sprintf('cd public && tar -xf %s', $local_tar_file));
 
-    // clean up temporary files
-    info('Cleaning up temporary files');
-    unlink($sql_file_local);
-    run("rm {$sql_file_remote}");
+    // clean up temporary tar files
+    info('Cleaning up temporary tar files');
     runLocally("rm {$local_tar_file}");
     run("rm {$remote_tar_file}");
     runLocally('[ -d public/Xassets ] && rm -rf public/Xassets || exit 0');
