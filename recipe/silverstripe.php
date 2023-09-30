@@ -173,6 +173,10 @@ task('download', function () {
     run(sprintf('mysqldump --add-drop-database --add-locks --disable-keys --extended-insert --single-transaction --quick %s > %s', $db, $sql_file_remote));
     runLocally(sprintf('rsync -zavP %s@%s:%s %s', get('remote_user'), $remote_hostname, $sql_file_remote, $sql_file_local));
 
+    // Drop & re-create the local database to prevent artefacts
+    info('Purging DB locally');
+    runLocally(sprintf('mysqladmin drop -f %s create %s',$dotenv_local['SS_DATABASE_NAME'], $dotenv_local['SS_DATABASE_NAME']));
+
     // Locally load the DB
     info('Loading DB locally');
     runLocally(sprintf('< %s mysql %s', $sql_file_local, $dotenv_local['SS_DATABASE_NAME']));
