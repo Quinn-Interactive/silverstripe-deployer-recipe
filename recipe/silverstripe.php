@@ -93,6 +93,10 @@ task('upload', function () {
     info('Uploading DB');
     runLocally(sprintf('rsync -zavP %s %s@%s:%s', $sql_file_local, get('remote_user'), $remote_hostname, $sql_file_remote));
 
+    // Drop & re-create the remote database to prevent artefacts
+    info('Purging DB locally');
+    run(sprintf('mysqladmin drop -f %s create %s',$dotenv_remote['SS_DATABASE_NAME'], $dotenv_remote['SS_DATABASE_NAME']));
+
     // Remotely load the DB
     info('Loading DB remotely');
     run(sprintf('< %s mysql %s', $sql_file_remote, $dotenv_remote['SS_DATABASE_NAME']));
