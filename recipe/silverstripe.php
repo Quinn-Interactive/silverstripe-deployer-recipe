@@ -1,7 +1,7 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 2.0.3
+ * Version: 2.1.0
  */
 
 namespace Deployer;
@@ -93,9 +93,18 @@ task('upload', function () {
     info('Uploading DB');
     runLocally(sprintf('rsync -zavP %s %s@%s:%s', $sql_file_local, get('remote_user'), $remote_hostname, $sql_file_remote));
 
+    // Drop & re-create the remote database to prevent artefacts
+    info('Purging DB locally');
+    run(sprintf('mysqladmin drop -f %s create %s',$dotenv_remote['SS_DATABASE_NAME'], $dotenv_remote['SS_DATABASE_NAME']));
+
     // Remotely load the DB
     info('Loading DB remotely');
     run(sprintf('< %s mysql %s', $sql_file_remote, $dotenv_remote['SS_DATABASE_NAME']));
+
+    // clean up temporary SQL files
+    info('Cleaning up temporary SQL files');
+    unlink($sql_file_local);
+    run("rm {$sql_file_remote}");
 
     // Tar up the assets remotely
     info('Building remote assets archive');
@@ -138,10 +147,8 @@ task('upload', function () {
     run(sprintf('tar -xf %s', $remote_tar_file));
     run(sprintf('sudo chown -R %s:%s %s', get('http_user'), get('http_user'), $assets_dir));
 
-    // clean up temporary files
-    info('Cleaning up temporary files');
-    unlink($sql_file_local);
-    run("rm {$sql_file_remote}");
+    // clean up temporary tar files
+    info('Cleaning up temporary tar files');
     runLocally("rm {$local_tar_file}");
     run("rm {$remote_tar_file}");
     info('Upload done!');
@@ -170,9 +177,18 @@ task('download', function () {
     run(sprintf('mysqldump --add-drop-database --add-locks --disable-keys --extended-insert --single-transaction --quick %s > %s', $db, $sql_file_remote));
     runLocally(sprintf('rsync -zavP %s@%s:%s %s', get('remote_user'), $remote_hostname, $sql_file_remote, $sql_file_local));
 
+    // Drop & re-create the local database to prevent artefacts
+    info('Purging DB locally');
+    runLocally(sprintf('mysqladmin drop -f %s create %s',$dotenv_local['SS_DATABASE_NAME'], $dotenv_local['SS_DATABASE_NAME']));
+
     // Locally load the DB
     info('Loading DB locally');
     runLocally(sprintf('< %s mysql %s', $sql_file_local, $dotenv_local['SS_DATABASE_NAME']));
+
+    // clean up temporary SQL files
+    info('Cleaning up temporary SQL files');
+    unlink($sql_file_local);
+    run("rm {$sql_file_remote}");
 
     // Tar up the assets remotely
     info('Building remote assets archive');
@@ -197,10 +213,8 @@ task('download', function () {
     runLocally('command -v trash || mv public/assets public/Xassets');
     runLocally(sprintf('cd public && tar -xf %s', $local_tar_file));
 
-    // clean up temporary files
-    info('Cleaning up temporary files');
-    unlink($sql_file_local);
-    run("rm {$sql_file_remote}");
+    // clean up temporary tar files
+    info('Cleaning up temporary tar files');
     runLocally("rm {$local_tar_file}");
     run("rm {$remote_tar_file}");
     runLocally('[ -d public/Xassets ] && rm -rf public/Xassets || exit 0');
