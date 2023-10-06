@@ -1,7 +1,7 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 2.1.0
+ * Version: 2.1.1
  */
 
 namespace Deployer;
@@ -94,7 +94,7 @@ task('upload', function () {
     runLocally(sprintf('rsync -zavP %s %s@%s:%s', $sql_file_local, get('remote_user'), $remote_hostname, $sql_file_remote));
 
     // Drop & re-create the remote database to prevent artefacts
-    info('Purging DB locally');
+    info('Purging DB remotely');
     run(sprintf('mysqladmin drop -f %s create %s',$dotenv_remote['SS_DATABASE_NAME'], $dotenv_remote['SS_DATABASE_NAME']));
 
     // Remotely load the DB
