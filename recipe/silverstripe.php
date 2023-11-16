@@ -95,7 +95,7 @@ task('upload', function () {
 
     // Drop & re-create the remote database to prevent artefacts
     info('Purging DB remotely');
-    run(sprintf('mysqladmin drop -f %s create %s',$dotenv_remote['SS_DATABASE_NAME'], $dotenv_remote['SS_DATABASE_NAME']));
+    run(sprintf('mysqladmin drop -f %s create %s', $dotenv_remote['SS_DATABASE_NAME'], $dotenv_remote['SS_DATABASE_NAME']));
 
     // Remotely load the DB
     info('Loading DB remotely');
@@ -156,6 +156,7 @@ task('upload', function () {
 
 task('download', function () {
     global $dotenv_local;
+    $abend = false;
 
     // get the remote environment; easy on live; must parse .env on non-production
     $remote_hostname = get('hostname');
@@ -173,51 +174,75 @@ task('download', function () {
     $sql_file_remote = run('mktemp');
     $db = $dotenv_remote['SS_DATABASE_NAME'];
     $sql_file_local = tempnam(sys_get_temp_dir(), $db);
-    info('Retrieving DB');
-    run(sprintf('mysqldump --add-drop-database --add-locks --disable-keys --extended-insert --single-transaction --quick %s > %s', $db, $sql_file_remote));
-    runLocally(sprintf('rsync -zavP %s@%s:%s %s', get('remote_user'), $remote_hostname, $sql_file_remote, $sql_file_local));
+    try {
+        info('Retrieving DB');
+        run(sprintf('mysqldump --add-drop-database --add-locks --disable-keys --extended-insert --single-transaction --quick %s > %s', $db, $sql_file_remote));
+        runLocally(sprintf('rsync -zavP %s@%s:%s %s', get('remote_user'), $remote_hostname, $sql_file_remote, $sql_file_local));
 
-    // Drop & re-create the local database to prevent artefacts
-    info('Purging DB locally');
-    runLocally(sprintf('mysqladmin drop -f %s create %s',$dotenv_local['SS_DATABASE_NAME'], $dotenv_local['SS_DATABASE_NAME']));
+        // Drop & re-create the local database to prevent artefacts
+        info('Purging DB locally');
+        runLocally(sprintf('mysqladmin drop -f %s create %s', $dotenv_local['SS_DATABASE_NAME'], $dotenv_local['SS_DATABASE_NAME']));
 
-    // Locally load the DB
-    info('Loading DB locally');
-    runLocally(sprintf('< %s mysql %s', $sql_file_local, $dotenv_local['SS_DATABASE_NAME']));
+        // Locally load the DB
+        info('Loading DB locally');
+        runLocally(sprintf('< %s mysql %s', $sql_file_local, $dotenv_local['SS_DATABASE_NAME']));
+    } catch (\Exception $e) {
+        warning($e->getMessage());
+        $abend = true;
+    } finally {
+        // clean up temporary SQL files
+        info('Cleaning up temporary SQL files');
+        if (file_exists($sql_file_local)) {
+            unlink($sql_file_local);
+        }
+        run("rm -f {$sql_file_remote}");
+        if ($abend) {
+            warning('Exiting because of previous exception.');
+            exit(1);
+        }
+    }
 
-    // clean up temporary SQL files
-    info('Cleaning up temporary SQL files');
-    unlink($sql_file_local);
-    run("rm {$sql_file_remote}");
+    // Transfer the assets
+    $abend = false;
+    try {
+        // Tar up the assets remotely
+        info('Building remote assets archive');
+        $shared_public_dir = sprintf('%s/%s', get('deploy_path'), 'shared/public');
+        $remote_tar_file = run('mktemp');
+        cd($shared_public_dir);
+        run(sprintf('doas tar -cf %s %s', $remote_tar_file, 'assets'));
 
-    // Tar up the assets remotely
-    info('Building remote assets archive');
-    $shared_public_dir = sprintf('%s/%s', get('deploy_path'), 'shared/public');
-    $remote_tar_file = run('mktemp');
-    cd($shared_public_dir);
-    run(sprintf('doas tar -cf %s %s', $remote_tar_file, 'assets'));
+        // tar up the local assets
+        info('Building local assets archive');
+        $local_tar_file = tempnam(sys_get_temp_dir(), 'assetstar');
+        runLocally('[ -d public/assets ] || mkdir public/assets');
+        runLocally(sprintf("cd public && tar -cf %s %s", $local_tar_file, 'assets'));
 
-    // tar up the local assets
-    info('Building local assets archive');
-    $local_tar_file = tempnam(sys_get_temp_dir(), 'assetstar');
-    runLocally('[ -d public/assets ] || mkdir public/assets');
-    runLocally(sprintf("cd public && tar -cf %s %s", $local_tar_file, 'assets'));
+        // Download the remote assets tar file
+        info('Downloading assets archive via rsync');
+        runLocally(sprintf('rsync -zavP %s@%s:%s %s', get('remote_user'), $remote_hostname, $remote_tar_file, $local_tar_file));
 
-    // Download the remote assets tar file
-    info('Downloading assets archive via rsync');
-    runLocally(sprintf('rsync -zavP %s@%s:%s %s', get('remote_user'), $remote_hostname, $remote_tar_file, $local_tar_file));
-
-    // Replace the local assets
-    info('Extracting assets locally');
-    runLocally('command -v trash && trash public/assets || exit 0');
-    runLocally('command -v trash || mv public/assets public/Xassets');
-    runLocally(sprintf('cd public && tar -xf %s', $local_tar_file));
-
-    // clean up temporary tar files
-    info('Cleaning up temporary tar files');
-    runLocally("rm {$local_tar_file}");
-    run("rm {$remote_tar_file}");
-    runLocally('[ -d public/Xassets ] && rm -rf public/Xassets || exit 0');
+        // Replace the local assets
+        info('Extracting assets locally');
+        runLocally('command -v trash && trash public/assets || exit 0');
+        runLocally('command -v trash || mv public/assets public/Xassets');
+        runLocally(sprintf('cd public && tar -xf %s', $local_tar_file));
+    } catch (\Exception $e) {
+        warning($e->getMessage());
+        $abend = true;
+    } finally {
+        // clean up temporary tar files
+        info('Cleaning up temporary tar files');
+        if (file_exists($local_tar_file)) {
+            unlink($local_tar_file);
+        }
+        run("rm -f {$remote_tar_file}");
+        runLocally('[ -d public/Xassets ] && rm -rf public/Xassets || exit 0');
+        if ($abend) {
+            warning('Exiting because of previous exception.');
+            exit(1);
+        }
+    }
     info('Download done');
 })->desc('Overwrite local DB and assets with remote files');
 
