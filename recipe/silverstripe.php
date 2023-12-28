@@ -302,7 +302,7 @@ task('nginx:reload', function () {
 
 // substitute for silverstripe:build and silverstripe:buildflush (because dev/build always flushes anyway)
 task('silverstripe:devbuild', function () {
-    return run('doas -u {{http_user}} {{bin/php}} {{release_path}}/{{silverstripe_cli_script}} /dev/build');
+    return run('doas -u {{http_user}} {{bin/php}} {{release_or_current_path}}/{{silverstripe_cli_script}} /dev/build');
 })->desc('Run doas -u {{http_user}} /dev/build');
 
 desc('Deploys your project');
