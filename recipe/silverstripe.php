@@ -274,7 +274,10 @@ task('silverstripe:robots', function () {
             }
         }
     } else {
-        run('cp {{release_path}}/robots/live/robots.txt {{release_path}}/public');
+        $robots_path = '{{release_path}}/robots/live/robots.txt';
+        if (test("[ -f $robots_path ]")) {
+            run("cp $robots_path {{release_path}}/public");
+        }
     }
 })->desc('Copy robots.txt into public');
 
