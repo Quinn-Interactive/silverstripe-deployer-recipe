@@ -1,7 +1,7 @@
 <?php
 /**
  * Quinn Interactive Silverstripe deployer recipe
- * Version: 2.1.2
+ * Version: 2.1.3
  */
 
 namespace Deployer;
@@ -274,7 +274,10 @@ task('silverstripe:robots', function () {
             }
         }
     } else {
-        run('cp {{release_path}}/robots/live/robots.txt {{release_path}}/public');
+        $robots_path = '{{release_path}}/robots/live/robots.txt';
+        if (test("[ -f $robots_path ]")) {
+            run("cp $robots_path {{release_path}}/public");
+        }
     }
 })->desc('Copy robots.txt into public');
 
