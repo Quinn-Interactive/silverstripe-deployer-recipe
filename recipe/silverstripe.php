@@ -286,11 +286,18 @@ task('silverstripe:theme', function () {
     if (get('themeless')) {
         return;
     }
-    if (preg_match('/^(live|demo)/', get('environment_name'))) {
-        run('cd {{release_path}}/themes/{{theme_name}} && yarn && yarn production');
+    $theme_path = get('theme_path');
+    if (!$theme_path) {
+        $theme_path = '{{release_path}}/themes/{{theme_name}}';
     } else {
-        run('cd {{release_path}}/themes/{{theme_name}} && yarn && yarn dev');
+        $theme_path = sprintf('{{release_path}}/%s', $theme_path);
     }
+    if (preg_match('/^(live|demo)/', get('environment_name'))) {
+        $build_type = 'production';
+    } else {
+        $build_type = 'dev';
+    }
+    run(sprintf('cd %s && yarn && yarn %s', $theme_path, $build_type));
 })->desc('Build the theme with yarn');
 
 // VENDOR-EXPOSE
