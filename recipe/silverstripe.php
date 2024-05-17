@@ -40,6 +40,33 @@ set('writable_dirs', [
     'public/_graphql',
 ]);
 
+/**
+ * Return mysql CLI options for DB connection if we can't use unix_socket.
+ * Detect this by the presence of SS_DATABASE_PASSWORD in the environment.
+ * Return the empty string if SS_DATABASE_PASSWORD is absent.
+ *
+ * @param array $env
+ * @return string
+ */
+function dbConnectionOptions(array $env)
+{
+    $db_connection_options = '';
+    $password = $env['SS_DATABASE_PASSWORD'] ?? null;
+    if ($password !== null) {
+        $db_connection_options .= sprintf('-p"%s" ', $password);
+        if (isset($env['SS_DATABASE_PORT'])) {
+            $db_connection_options .= sprintf('-P "%s" ', $env['SS_DATABASE_PORT']);
+        }
+        if (isset($env['SS_DATABASE_USERNAME'])) {
+            $db_connection_options .= sprintf('-u "%s" ', $env['SS_DATABASE_USERNAME']);
+        }
+        if (isset($env['SS_DATABASE_SERVER'])) {
+            $db_connection_options .= sprintf('-h "%s" ', $env['SS_DATABASE_SERVER']);
+        }
+    }
+    return $db_connection_options;
+}
+
 // Tasks
 task('info', function () {
     $info = [
@@ -94,12 +121,13 @@ task('upload', function () {
     runLocally(sprintf('rsync -zavP %s %s@%s:%s', $sql_file_local, get('remote_user'), $remote_hostname, $sql_file_remote));
 
     // Drop & re-create the remote database to prevent artefacts
+    $db_connection_options = dbConnectionOptions($dotenv_remote);
     info('Purging DB remotely');
-    run(sprintf('mysqladmin drop -f %s create %s', $dotenv_remote['SS_DATABASE_NAME'], $dotenv_remote['SS_DATABASE_NAME']));
+    run(sprintf('mysqladmin %s drop -f %s create %s', $db_connection_options, $dotenv_remote['SS_DATABASE_NAME'], $dotenv_remote['SS_DATABASE_NAME']));
 
     // Remotely load the DB
     info('Loading DB remotely');
-    run(sprintf('< %s mysql %s', $sql_file_remote, $dotenv_remote['SS_DATABASE_NAME']));
+    run(sprintf('< %s mysql %s %s', $db_connection_options, $sql_file_remote, $dotenv_remote['SS_DATABASE_NAME']));
 
     // clean up temporary SQL files
     info('Cleaning up temporary SQL files');
@@ -173,10 +201,11 @@ task('download', function () {
     // Dump the DB remotely & download it
     $sql_file_remote = run('mktemp');
     $db = $dotenv_remote['SS_DATABASE_NAME'];
+    $db_connection_options = dbConnectionOptions($dotenv_remote);
     $sql_file_local = tempnam(sys_get_temp_dir(), $db);
     try {
         info('Retrieving DB');
-        run(sprintf('mysqldump --add-drop-database --add-locks --disable-keys --extended-insert --single-transaction --quick %s > %s', $db, $sql_file_remote));
+        run(sprintf('mysqldump %s --add-drop-database --add-locks --disable-keys --extended-insert --single-transaction --quick %s > %s', $db_connection_options, $db, $sql_file_remote));
         runLocally(sprintf('rsync -zavP %s@%s:%s %s', get('remote_user'), $remote_hostname, $sql_file_remote, $sql_file_local));
 
         // Drop & re-create the local database to prevent artefacts
