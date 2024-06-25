@@ -127,7 +127,7 @@ task('upload', function () {
 
     // Remotely load the DB
     info('Loading DB remotely');
-    run(sprintf('< %s mysql %s %s', $db_connection_options, $sql_file_remote, $dotenv_remote['SS_DATABASE_NAME']));
+    run(sprintf('< %s mysql %s %s', $sql_file_remote, $db_connection_options, $dotenv_remote['SS_DATABASE_NAME']));
 
     // clean up temporary SQL files
     info('Cleaning up temporary SQL files');
