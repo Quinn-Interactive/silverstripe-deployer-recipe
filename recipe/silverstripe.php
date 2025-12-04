@@ -40,6 +40,28 @@ set('writable_dirs', [
     'public/_graphql',
 ]);
 
+// Retain silverstripe_cli_script for compatibility with overrides
+set('silverstripe_cli_script', 'vendor/bin/sake');
+
+// Silverstripe version detection
+set('silverstripe6', test('[ -f {{release_or_current_path}}/vendor/silverstripe/framework/bin/sake ]'));
+
+// dev/build or db:build
+set('silverstripe_build_command', function () {
+    if (get('silverstripe6')) {
+        return 'db:build';
+    }
+    return 'dev/build';
+});
+
+// flush=1 or --flush
+set('silverstripe_flush_option', function () {
+    if (get('silverstripe6')) {
+        return '--flush';
+    }
+    return 'flush=1';
+});
+
 /**
  * Return mysql CLI options for DB connection if we can't use unix_socket.
  * Detect this by the presence of SS_DATABASE_PASSWORD in the environment.
@@ -339,10 +361,13 @@ task('nginx:reload', function () {
     run(sprintf('[ -x %s ] && doas service nginx reload || exit 0', get('nginx_path', '/usr/local/sbin/nginx')));
 })->desc('Reload the nginx service')->oncePerNode();
 
-// substitute for silverstripe:build and silverstripe:buildflush (because dev/build always flushes anyway)
+// substitutes for silverstripe:build and silverstripe:buildflush (because we want to run as www)
 task('silverstripe:devbuild', function () {
-    return run('doas -u {{http_user}} {{bin/php}} {{release_or_current_path}}/{{silverstripe_cli_script}} /dev/build');
-})->desc('Run doas -u {{http_user}} /dev/build');
+    return run('doas -u {{http_user}} {{release_or_current_path}}/{{silverstripe_cli_script}} {{silverstripe_build_command}}');
+})->desc('Run dev/build or db:build as {{http_user}}');
+task('silverstripe:devbuildflush', function () {
+    return run('doas -u {{http_user}} {{release_or_current_path}}/{{silverstripe_cli_script}} {{silverstripe_build_command}} {{silverstripe_flush_option}}');
+})->desc('Run dev/build flush=1 or db:build --flush as {{http_user}}');
 
 desc('Deploys your project');
 task('deploy', [
@@ -419,4 +444,4 @@ task('qi:releases', function () {
 before('upload', 'checkzfs');
 after('deploy:symlink', 'nginx:reload');
 after('deploy:failed', 'deploy:unlock');
-after('rollback', 'silverstripe:devbuild');
+after('rollback', 'silverstripe:devbuildflush');
