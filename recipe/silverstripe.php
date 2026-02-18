@@ -44,7 +44,7 @@ set('writable_dirs', [
 set('silverstripe_cli_script', 'vendor/bin/sake');
 
 // Silverstripe version detection
-set('silverstripe6', test('[ -f {{release_or_current_path}}/vendor/silverstripe/framework/bin/sake ]'));
+set('silverstripe6', fn (): bool => test('[ -f {{release_or_current_path}}/vendor/silverstripe/framework/bin/sake ]'));
 
 // dev/build or db:build
 set('silverstripe_build_command', function () {
